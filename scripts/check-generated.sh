@@ -14,12 +14,22 @@ failures=0
 run() {
   local label="$1"
   shift
-  if "$@"; then
+  local log
+  log="$(mktemp)"
+  if "$@" >"${log}" 2>&1; then
     echo "  ✓ ${label}"
   else
     echo "  ✗ ${label}"
+    tail -n 60 "${log}" | sed 's/^/      /'
     failures=$((failures + 1))
+    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+      # Surface the failure as an annotation (readable without log access).
+      local summary
+      summary="$(grep -E 'Error|error|FAILED|assert|✗|Traceback' "${log}" | tail -n 8 | tr '\n' ' ' | cut -c1-900)"
+      echo "::error title=${project##*/}: ${label}::${summary:-see job log}"
+    fi
   fi
+  rm -f "${log}"
 }
 
 shopt -s nullglob
