@@ -70,6 +70,18 @@ export interface ProjectSpec {
   readmeNotes?: string[];
   /** Extra env-file variables (e.g. for tests or docs). */
   extraEnv?: Array<{ key: string; value: (env: EnvCode) => string }>;
+  /** Extra pinned Python requirements (e.g. "pg8000==1.31.2"); added to requirements.txt and setup.py. */
+  extraRequirements?: string[];
+  /** Debian packages installed in the Flex Template image (e.g. a JRE for cross-language transforms). */
+  aptPackages?: string[];
+}
+
+const PIN_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*(\[[A-Za-z0-9,._-]+\])?==[A-Za-z0-9._+-]+$/;
+const APT_RE = /^[a-z0-9][a-z0-9.+-]+$/;
+
+function checkedRequirements(spec: ProjectSpec): string[] {
+  for (const r of spec.extraRequirements ?? []) if (!PIN_RE.test(r)) throw new Error(`Requirement must be pinned (name==version): ${r}`);
+  return spec.extraRequirements ?? [];
 }
 
 const ROOT_FILES_ORDER = ["README.md", "main.py", "requirements.txt"];
@@ -222,7 +234,7 @@ function setupPy(spec: ProjectSpec, d: Derived): string {
           ["version", pyStr(d.version)],
           ["description", pyStr(str(spec.p, "description") || spec.scenario.title)],
           ["packages", pyCall("setuptools.find_packages", [], [["include", pyList([pyStr("pipeline"), pyStr("pipeline.*")])]])],
-          ["install_requires", pyList([])],
+          ["install_requires", pyList(checkedRequirements(spec).map(pyStr))],
           ["python_requires", pyStr(`>=${RUNTIME.pythonVersion}`)],
         ],
         { explode: true },
@@ -257,6 +269,20 @@ function dockerfile(spec: ProjectSpec): string {
     "COPY schemas ./schemas",
     ...(Object.keys(spec.files).some((f) => f.startsWith("sql/")) ? ["COPY sql ./sql"] : []),
     "",
+    ...((spec.aptPackages ?? []).length
+      ? [
+          "# hadolint ignore=DL3008",
+          "RUN apt-get update \\",
+          `    && apt-get install -y --no-install-recommends ${(spec.aptPackages ?? [])
+            .map((pkg) => {
+              if (!APT_RE.test(pkg)) throw new Error(`Invalid apt package ${pkg}`);
+              return pkg;
+            })
+            .join(" ")} \\`,
+          "    && rm -rf /var/lib/apt/lists/*",
+          "",
+        ]
+      : []),
     "RUN pip install --no-cache-dir -r requirements.txt \\",
     "    && pip install --no-cache-dir .",
     "",
@@ -759,7 +785,7 @@ export function assembleProject(spec: ProjectSpec): GeneratedFiles {
     "pipeline/__init__.py": pyDocstring(`${d.pipeline} pipeline package.`) + "\n",
     "pipeline/options.py": optionsPy(spec),
     ...spec.files,
-    "requirements.txt": `apache-beam[gcp]==${RUNTIME.beamVersion}\n`,
+    "requirements.txt": [`apache-beam[gcp]==${RUNTIME.beamVersion}`, ...checkedRequirements(spec)].join("\n") + "\n",
     "requirements-dev.txt": `-r requirements.txt\npytest==${RUNTIME.pytestVersion}\nruff==${RUNTIME.ruffVersion}\n`,
     "setup.py": setupPy(spec, d),
     "pyproject.toml": pyprojectToml(),

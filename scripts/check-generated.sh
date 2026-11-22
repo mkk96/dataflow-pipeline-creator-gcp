@@ -54,12 +54,24 @@ for project in "${projects[@]}"; do
   run "py_compile" "${PYTHON}" -m py_compile "${py_files[@]}"
   run "ruff check" bash -c "cd '${project}' && ruff check ."
   run "ruff format --check" bash -c "cd '${project}' && ruff format --check ."
-  run "pytest (DirectRunner)" bash -c "cd '${project}' && ${PYTHON} -m pytest -p no:cacheprovider"
-  run "scripts/run_local.sh end to end" bash -c "cd '${project}' && PATH=\"$(dirname "$(command -v "${PYTHON}")"):\$PATH\" bash scripts/run_local.sh >/dev/null && test -s output/local/rows.jsonl"
-  run "metadata.json" "${PYTHON}" "${ROOT}/tests/generated/validate_metadata.py" "${project}"
-  run "shellcheck" shellcheck "${project}"/scripts/*.sh
-  run "yamllint cloudbuild.yaml" yamllint -d "{extends: default, rules: {line-length: {max: 120}, document-start: disable}}" "${project}/cloudbuild.yaml"
-  if command -v hadolint >/dev/null 2>&1; then
+  # Each check runs only when the project has the files it applies to
+  # (Google-template launchers have no pipeline package, tests or Dockerfile).
+  if [[ -d "${project}/tests" ]]; then
+    run "pytest (DirectRunner)" bash -c "cd '${project}' && ${PYTHON} -m pytest -p no:cacheprovider"
+  fi
+  if [[ -f "${project}/scripts/run_local.sh" ]]; then
+    run "scripts/run_local.sh end to end" bash -c "cd '${project}' && PATH=\"$(dirname "$(command -v "${PYTHON}")"):\$PATH\" bash scripts/run_local.sh >/dev/null && test -n \"\$(find output/local -type f -size +0 2>/dev/null | head -1)\""
+  fi
+  if [[ -f "${project}/flex_template/metadata.json" ]]; then
+    run "metadata.json" "${PYTHON}" "${ROOT}/tests/generated/validate_metadata.py" "${project}"
+  fi
+  if compgen -G "${project}/scripts/*.sh" >/dev/null; then
+    run "shellcheck" shellcheck "${project}"/scripts/*.sh
+  fi
+  if [[ -f "${project}/cloudbuild.yaml" ]]; then
+    run "yamllint cloudbuild.yaml" yamllint -d "{extends: default, rules: {line-length: {max: 120}, document-start: disable}}" "${project}/cloudbuild.yaml"
+  fi
+  if command -v hadolint >/dev/null 2>&1 && [[ -f "${project}/flex_template/Dockerfile" ]]; then
     run "hadolint Dockerfile" hadolint --ignore DL3006 "${project}/flex_template/Dockerfile"
   fi
   if compgen -G "${project}/sql/*.sql" >/dev/null; then

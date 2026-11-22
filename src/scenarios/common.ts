@@ -53,7 +53,7 @@ export const COMMON_FIELDS: FieldSchema[] = [
     required: true, validate: (x) => v.plainText(String(x)), help: "Shown in the Flex Template metadata and README.",
   },
   {
-    key: "version", label: "Template version", type: "text", section: "pipeline", default: "1.0.0", required: true,
+    key: "version", modes: ["custom"], label: "Template version", type: "text", section: "pipeline", default: "1.0.0", required: true,
     validate: (x) => v.version(String(x)), help: "Tags the container image and the template spec path.",
   },
   // Environment
@@ -88,12 +88,12 @@ export const COMMON_FIELDS: FieldSchema[] = [
     help: "temp_location = gs://<bucket>/<pipeline>/temp, staging_location = gs://<bucket>/<pipeline>/staging.",
   },
   {
-    key: "templates_bucket", label: "Templates bucket", type: "text", section: "gcp", default: "acme-dev-data-templates",
+    key: "templates_bucket", modes: ["custom"], label: "Templates bucket", type: "text", section: "gcp", default: "acme-dev-data-templates",
     required: true, envSpecific: true, suggestable: true, validate: (x) => v.gcsBucket(String(x)),
     help: "Flex Template spec: gs://<bucket>/<pipeline>/<version>/spec.json.",
   },
   {
-    key: "artifact_repo", label: "Artifact Registry repository", type: "text", section: "gcp", default: "dataflow",
+    key: "artifact_repo", modes: ["custom"], label: "Artifact Registry repository", type: "text", section: "gcp", default: "dataflow",
     required: true, validate: (x) => v.arRepo(String(x)),
     help: "Docker repository in the job's region: <region>-docker.pkg.dev/<project>/<repo>/<pipeline>:<version>.",
   },
@@ -120,13 +120,13 @@ export const COMMON_FIELDS: FieldSchema[] = [
   },
   { key: "max_workers", label: "Max workers", type: "number", section: "workers", default: 10, min: 1, max: 1000 },
   {
-    key: "autoscaling", label: "Autoscaling", type: "select", section: "workers", default: "THROUGHPUT_BASED",
+    key: "autoscaling", modes: ["custom"], label: "Autoscaling", type: "select", section: "workers", default: "THROUGHPUT_BASED",
     options: [
       { value: "THROUGHPUT_BASED", label: "Throughput based (recommended)" },
       { value: "NONE", label: "None (fixed workers)" },
     ],
   },
-  { key: "dataflow_prime", label: "Dataflow Prime", type: "boolean", section: "workers", default: false },
+  { key: "dataflow_prime", modes: ["custom"], label: "Dataflow Prime", type: "boolean", section: "workers", default: false },
   {
     key: "kms_key", label: "CMEK key (optional)", type: "text", section: "workers", default: "", envSpecific: true,
     validate: (x) => v.kmsKey(String(x)), help: "projects/P/locations/L/keyRings/R/cryptoKeys/K — encrypts job state and BigQuery output.",
@@ -165,7 +165,7 @@ export function validateCommon(p: Params): Record<string, v.Issues> {
 // ---------------------------------------------------------------------------
 
 export function allFields(s: Scenario): FieldSchema[] {
-  return [...COMMON_FIELDS, ...s.fields];
+  return [...COMMON_FIELDS.filter((f) => !f.modes || f.modes.includes(s.mode)), ...s.fields];
 }
 
 export function allSections(s: Scenario): Section[] {

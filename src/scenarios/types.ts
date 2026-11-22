@@ -56,6 +56,8 @@ export interface FieldSchema {
   validateItem?: (item: string, p: Params) => Issues;
   /** Value differs per environment; written to config/<env>.env, never hardcoded in code. */
   envSpecific?: boolean;
+  /** Modes the field applies to (common fields only). Default: all modes. */
+  modes?: Mode[];
   suggestable?: boolean;
 }
 

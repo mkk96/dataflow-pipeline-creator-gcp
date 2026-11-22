@@ -58,7 +58,7 @@ describe.each(SCENARIOS.map((s) => [s.id, s] as const))("scenario %s — contrac
       const p = sampleParams(s, n);
       const errors = Object.entries(validateParams(s, p)).flatMap(([k, i]) => i.errors.map((e) => `${k}: ${e}`));
       expect(errors, n).toEqual([]);
-      expect(Object.keys(s.generate(p)).length).toBeGreaterThan(10);
+      expect(Object.keys(s.generate(p)).length).toBeGreaterThan(s.mode === "custom" ? 10 : 2);
     }
   });
 

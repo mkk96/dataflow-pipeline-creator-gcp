@@ -76,7 +76,7 @@ export function parseFilter(line: string): Filter | null {
 }
 
 /** TS-side check that a literal can be cast to a BigQuery type (mirrors cast_value in dofns.py). */
-function castable(value: string, type: BqType): boolean {
+export function castable(value: string, type: BqType): boolean {
   switch (type) {
     case "STRING":
       return true;
@@ -104,13 +104,13 @@ const N_VALID = 3;
 type RawValue = string | null;
 type RawRecord = Record<string, RawValue>;
 
-function addDays(date: string, days: number): string {
+export function addDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
-function bump(value: string, type: BqType, delta: number): string {
+export function bump(value: string, type: BqType, delta: number): string {
   switch (type) {
     case "INT64":
       return String(Number(value) + delta);
@@ -131,7 +131,7 @@ function bump(value: string, type: BqType, delta: number): string {
   }
 }
 
-function baseValue(c: Column, i: number, partitionField: string): string {
+export function baseValue(c: Column, i: number, partitionField: string): string {
   switch (c.type) {
     case "STRING":
       return `${c.target}_${i + 1}`;
@@ -151,7 +151,7 @@ function baseValue(c: Column, i: number, partitionField: string): string {
 }
 
 /** A value that satisfies (pass) or violates (fail) a filter. */
-function filterValue(f: Filter, c: Column, base: string, pass: boolean): RawValue {
+export function filterValue(f: Filter, c: Column, base: string, pass: boolean): RawValue {
   const items = f.value.split(",").map((s) => s.trim()).filter(Boolean);
   const different = (x: string) => (c.type === "STRING" ? `${x}_other` : bump(x, c.type, 1));
   switch (f.op) {
@@ -281,16 +281,16 @@ export function buildSampleData(p: Params): SampleData {
   };
 }
 
-function csvField(value: RawValue, delimiter: string): string {
+export function csvField(value: RawValue, delimiter: string): string {
   if (value === null) return "";
   return /["\r\n]/.test(value) || value.includes(delimiter) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
-function csvLine(r: RawRecord, cols: Column[], delimiter: string): string {
+export function csvLine(r: RawRecord, cols: Column[], delimiter: string): string {
   return cols.map((c) => csvField(r[c.source] ?? null, delimiter)).join(delimiter);
 }
 
-function jsonLine(r: RawRecord): string {
+export function jsonLine(r: RawRecord): string {
   return JSON.stringify(r);
 }
 
@@ -298,12 +298,12 @@ function jsonLine(r: RawRecord): string {
 // Form schema
 // ---------------------------------------------------------------------------
 
-const typeOptions: FieldOption[] = BQ_TYPES.map((t) => ({ value: t, label: t }));
-const isCsv = (p: Params) => p.file_format === "CSV";
-const dlqBq = (p: Params) => p.dlq_mode === "bigquery" || p.dlq_mode === "both";
-const dlqGcs = (p: Params) => p.dlq_mode === "gcs" || p.dlq_mode === "both";
+export const typeOptions: FieldOption[] = BQ_TYPES.map((t) => ({ value: t, label: t }));
+export const isCsv = (p: Params) => p.file_format === "CSV";
+export const dlqBq = (p: Params) => p.dlq_mode === "bigquery" || p.dlq_mode === "both";
+export const dlqGcs = (p: Params) => p.dlq_mode === "gcs" || p.dlq_mode === "both";
 
-const DEFAULT_COLUMNS: Row[] = [
+export const DEFAULT_COLUMNS: Row[] = [
   { source: "order_id", target: "order_id", type: "STRING", required: true, drop: false },
   { source: "customer_id", target: "customer_id", type: "STRING", required: false, drop: false },
   { source: "order_ts", target: "order_timestamp", type: "TIMESTAMP", required: true, drop: false },
@@ -1061,7 +1061,7 @@ function generateGcsToBigquery(p: Params) {
 // Static Python: pipeline/dofns.py
 // ---------------------------------------------------------------------------
 
-const DOFNS_PY = `"""DoFns and record helpers: parsing, casting, filtering, dead letters, custom logic."""
+export const DOFNS_PY = `"""DoFns and record helpers: parsing, casting, filtering, dead letters, custom logic."""
 
 from __future__ import annotations
 
@@ -1375,7 +1375,7 @@ class KeepOneFn(beam.DoFn):
 // Tests
 // ---------------------------------------------------------------------------
 
-function conftestPy(format: string): string {
+export function conftestPy(format: string): string {
   const lines = [
     pyDocstring("Test setup: make the project root importable and build binary sample files."),
     "",
@@ -1408,7 +1408,7 @@ function conftestPy(format: string): string {
   return lines.join("\n");
 }
 
-function makeSampleFilesPy(cols: Column[], format: string): string {
+export function makeSampleFilesPy(cols: Column[], format: string): string {
   return [
     pyDocstring(
       "Build tests/sample_data/sample.avro|parquet from records.json (all values as nullable strings).\n\nUsed by the tests and by scripts/run_local.sh.",
@@ -1468,7 +1468,7 @@ function makeSampleFilesPy(cols: Column[], format: string): string {
   }
 }
 
-function rawElement(p: Params, r: Record<string, string | null>): Py {
+export function rawElement(p: Params, r: Record<string, string | null>): Py {
   const format = str(p, "file_format");
   const cols = columnsOf(p);
   if (format === "CSV") return pyStr(csvLine(r, cols, String(p.csv_delimiter ?? ",")));
@@ -1476,7 +1476,7 @@ function rawElement(p: Params, r: Record<string, string | null>): Py {
   return pyFromJson(r);
 }
 
-function testTransformsPy(p: Params, sample: SampleData): string {
+export function testTransformsPy(p: Params, sample: SampleData): string {
   const audit = list(p, "audit_columns");
   const lines: string[] = [
     pyDocstring("Unit tests for the record helpers and transforms (DirectRunner / TestPipeline)."),
@@ -1610,7 +1610,7 @@ function testTransformsPy(p: Params, sample: SampleData): string {
   return lines.filter((l, i, arr) => !(l === "" && arr[i - 1] === "" && arr[i - 2] === "")).join("\n").replace(/\n{4,}/g, "\n\n\n");
 }
 
-function testPipelinePy(p: Params, sample: SampleData, optionsClass: string, samplePath: string): string {
+export function testPipelinePy(p: Params, sample: SampleData, optionsClass: string, samplePath: string): string {
   void optionsClass;
   const dlqBqMode = dlqBq(p);
   const dlqGcsMode = dlqGcs(p);

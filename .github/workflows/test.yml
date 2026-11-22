@@ -59,20 +59,18 @@ jobs:
           cache: pip
           cache-dependency-path: generated/*/requirements*.txt
 
-      - name: All projects pin the same dependencies
+      - name: Every Beam project pins the runtime's apache-beam version
         run: |
-          first=$(ls -d generated/*/ | head -1)
-          for p in generated/*/; do
-            diff <(grep -v '^#' "${first}requirements.txt") <(grep -v '^#' "${p}requirements.txt")
-            diff <(grep -v '^#' "${first}requirements-dev.txt") <(grep -v '^#' "${p}requirements-dev.txt")
+          for req in generated/*/requirements.txt; do
+            grep -q "^apache-beam\[gcp\]==${{ needs.app.outputs.beam }}$" "$req" || { echo "::error::$req does not pin apache-beam[gcp]==${{ needs.app.outputs.beam }}"; exit 1; }
           done
-          grep -q "apache-beam\[gcp\]==${{ needs.app.outputs.beam }}" "${first}requirements.txt"
 
-      - name: pip install the generated requirements (+ checker tools)
+      - name: pip install every generated project's requirements (+ checker tools)
         run: |
-          first=$(ls -d generated/*/ | head -1)
           python -m pip install --upgrade pip
-          (cd "$first" && pip install -r requirements-dev.txt)
+          args=()
+          for req in generated/*/requirements-dev.txt generated/*/requirements.txt; do args+=(-r "$req"); done
+          pip install "${args[@]}"
           pip install jsonschema==4.25.1 yamllint==1.37.1
           python -c "import apache_beam; print('apache-beam', apache_beam.__version__)"
 
