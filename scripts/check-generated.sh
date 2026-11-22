@@ -25,8 +25,9 @@ run() {
     if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
       # Surface the failure as an annotation (readable without log access).
       local summary
-      summary="$(grep -E 'Error|error|FAILED|assert|SC[0-9]{4}|DL[0-9]{4}|Traceback' "${log}" | tail -n 8 | tr '\n' ' ' | cut -c1-900)"
-      [[ -n "${summary}" ]] || summary="$(tail -n 8 "${log}" | tr '\n' ' ' | cut -c1-900)"
+      # `|| true`: with pipefail, a grep without matches must not abort the script (set -e).
+      summary="$(grep -E 'Error|error|FAILED|assert|SC[0-9]{4}|DL[0-9]{4}|Traceback' "${log}" | tail -n 8 | tr '\n' ' ' | cut -c1-900 || true)"
+      [[ -n "${summary}" ]] || summary="$(tail -n 8 "${log}" | tr '\n' ' ' | cut -c1-900 || true)"
       # Workflow-command escaping: % first, then : and , in properties.
       local title="${project##*/} - ${label}"
       title="${title//%/%25}"
