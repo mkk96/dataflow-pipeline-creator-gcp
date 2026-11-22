@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mkk96/dataflow-pipeline-creator-gcp/tests/generated/flex-template-metadata.schema.json",
+  "title": "Dataflow Flex Template metadata (metadata.json)",
+  "description": "Structural checks for the metadata file passed to `gcloud dataflow flex-template build --metadata-file`. Keys follow Google's documented template metadata format (name, description, streaming, parameters[name,label,helpText,isOptional,regexes]).",
+  "type": "object",
+  "required": ["name", "parameters"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "streaming": { "type": "boolean" },
+    "supportsAtLeastOnce": { "type": "boolean" },
+    "supportsExactlyOnce": { "type": "boolean" },
+    "defaultStreamingMode": { "type": "string" },
+    "parameters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "label", "helpText"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
+          "label": { "type": "string", "minLength": 1 },
+          "helpText": { "type": "string", "minLength": 1 },
+          "isOptional": { "type": "boolean" },
+          "regexes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "paramType": { "type": "string" },
+          "groupName": { "type": "string" },
+          "parentName": { "type": "string" },
+          "parentTriggerValues": { "type": "array", "items": { "type": "string" } },
+          "enumOptions": { "type": "array" },
+          "defaultValue": { "type": "string" },
+          "customMetadata": { "type": "object" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
