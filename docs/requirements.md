@@ -108,5 +108,6 @@ beyond that.
 
 ## Deliverables for the first pass
 Scaffold, scenario framework, shared generators, scenario #1 end to end,
-CI pipeline, GitHub Pages deploy, README (run locally, add a scenario,
+CI pipeline, GitHub Pages deploy, README (how to use the app and what it
+generates — no local setup), DEVELOPMENT.md (run locally, add a scenario,
 deploy).

@@ -17,6 +17,10 @@ ready-to-run Apache Beam (Python) projects for Google Cloud Dataflow.
   applies to future scenarios.
 - Ask me when a requirement is ambiguous instead of guessing.
 
+## Docs
+- README.md is a user guide for the hosted app only: how to use it, what it generates, and how to deploy the generated project. Never put local setup or contributor steps in it.
+- Local setup, adding a scenario and deploying the site go in DEVELOPMENT.md.
+
 ## Commands
 - `npm run dev`: app at http://localhost:5173
 - `npm run typecheck && npm run lint && npm test && npm run build`: app checks

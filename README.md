@@ -52,46 +52,33 @@ Planned, and shown as **Soon** in the gallery:
   README.md                    setup, IAM roles, how to run
 ```
 
-Then, inside the project:
+### Deploy the generated project
 
-```bash
-pip install -r requirements-dev.txt && pytest
-scripts/run_local.sh                       # DirectRunner on tests/sample_data
-scripts/build_flex_template.sh dev         # Cloud Build: image + template spec
-RUN_DATE=2026-01-15 scripts/run_flex_template.sh dev
-```
+Unzip it and follow its own `README.md`, which lists the exact commands and the IAM roles. In short:
 
-## Run the app locally
+1. Check `config/dev.env`, `config/stg.env` and `config/prd.env`: project, buckets, service account, subnetwork and so on. They hold no secrets.
+2. Build the Flex Template once per version. Cloud Build builds the image, pushes it to Artifact Registry and writes the template spec:
+   ```bash
+   scripts/build_flex_template.sh prd
+   ```
+3. Launch a run from the template. Batch jobs take the run date, which is today by default:
+   ```bash
+   RUN_DATE=2026-01-15 scripts/run_flex_template.sh prd
+   ```
+4. Or schedule it: the optional `airflow/<dag_id>.py` launches the template from Cloud Composer every day, passing `{{ ds }}` as the run date.
 
-Requires Node 26 (see `.nvmrc`).
+### Parameters at a glance
 
-```bash
-npm install
-npm run dev            # http://localhost:5173
-npm test               # unit tests (vitest)
-npm run generate       # write every scenario sample to generated/
-```
+Every form field has an **ⓘ** tooltip with the details. The main groups:
 
-To check the generated projects as CI does, use Python 3.11 with the generated requirements installed, plus `jsonschema`, `shellcheck` and `yamllint` (and optionally `hadolint`):
-
-```bash
-pip install -r generated/<any project>/requirements-dev.txt jsonschema yamllint shellcheck-py
-bash scripts/check-generated.sh
-```
-
-## Add a scenario
-
-1. Create `src/scenarios/<name>.ts` exporting a `Scenario` (see `src/scenarios/types.ts`): `id`, `title`, `description`, `mode`, `kind`, `naming`, `sections`, `fields`, `samples`, and `generate(params) => Record<path, content>`.
-2. In `generate`, build the scenario's own files (`pipeline/transforms.py`, `dofns.py`, `io.py`, schemas, tests, sample data) and pass them to `assembleProject()` (`src/generators/project.ts`). It adds every shared file, so never copy those into a scenario.
-3. Put user input into generated files only through the emitters: `src/lib/emit/python.ts` for Python, and `shq` / `envLine` / `yamlStr` / `commentText` in `src/lib/emit/text.ts`.
-4. Add `samples` that cover the variants, and tooltip text for new parameters in `src/config/fieldDocs.ts`.
-5. Register the scenario in `src/scenarios/registry.ts` and remove it from `PLANNED_SCENARIOS`.
-6. Run `npm test && npm run generate && bash scripts/check-generated.sh`. Everything must pass.
-
-## Deploy
-
-1. Push to GitHub.
-2. Go to **Settings → Pages → Source** and choose **GitHub Actions**.
-3. Pushes to `main` run `.github/workflows/deploy.yml`. It first runs the full `test.yml` (app checks plus every generated project) and deploys only if that passes. Pull requests run `test.yml` only.
-
-Versions live in one place: `src/config/runtime.ts` (Beam, Python, images, test tools). CI reads them through `scripts/print-runtime.ts`.
+- **Pipeline:** the pipeline (package) name, the Dataflow job name, a description, and the template version.
+- **Environment, naming & labels:** the env the values belong to (dev/stg/prd), org, domain, and the team, owner and cost-center labels applied to every Dataflow job.
+- **GCP project, storage & templates:** project, region, the temp/staging bucket, the templates bucket, and the Artifact Registry repository.
+- **Workers, network & security:** worker service account, network and subnetwork, public IPs (off by default), machine type, max workers, autoscaling, Dataflow Prime, and an optional CMEK key.
+- **Scenario sections:** for GCS → BigQuery:
+  - source files and format
+  - column mapping (source → BigQuery column, type, required, drop)
+  - filters, dedup and audit columns
+  - destination table, partitioning and write disposition
+  - where bad records go
+- **Airflow launcher:** generate the Composer DAG and choose its schedule.
