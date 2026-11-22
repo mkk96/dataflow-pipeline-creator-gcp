@@ -4,18 +4,24 @@
  *   2. import it here and add it to SCENARIOS
  *   3. remove its entry from PLANNED_SCENARIOS
  */
+import { bigqueryToGcs } from "./bigqueryToGcs";
+import { bigqueryTransform } from "./bigqueryTransform";
 import { gcsToBigquery } from "./gcsToBigquery";
+import { gcsValidateDedup } from "./gcsValidateDedup";
 import { googleTemplateLauncher } from "./googleTemplateLauncher";
 import type { PlannedScenario, Scenario } from "./types";
 
-export const SCENARIOS: Scenario[] = [gcsToBigquery, googleTemplateLauncher];
+export const SCENARIOS: Scenario[] = [
+  gcsToBigquery,
+  bigqueryTransform,
+  bigqueryToGcs,
+  gcsValidateDedup,
+  googleTemplateLauncher,
+];
 
 /** Roadmap from docs/requirements.md (shown as "Soon" in the gallery). */
 export const PLANNED_SCENARIOS: PlannedScenario[] = [
-  { id: "bigquery_transform", title: "BigQuery → transform → BigQuery", description: "Read a table or SQL query, transform rows, write to BigQuery.", mode: "custom", kind: "batch" },
-  { id: "bigquery_to_gcs", title: "BigQuery → GCS export", description: "Export to Parquet, Avro, JSON or CSV with sharded files.", mode: "custom", kind: "batch" },
   { id: "jdbc_to_bigquery", title: "JDBC (Cloud SQL) → BigQuery", description: "Postgres / MySQL with partitioned reads; passwords from Secret Manager.", mode: "custom", kind: "batch" },
-  { id: "gcs_validate_dedup", title: "GCS → validate + dedup → BigQuery", description: "Schema validation and dedup; bad rows to an error table or GCS.", mode: "custom", kind: "batch" },
   { id: "gcs_dlp_bigquery", title: "GCS → Cloud DLP → BigQuery", description: "Mask or tokenize PII with Cloud DLP before loading.", mode: "custom", kind: "batch" },
   { id: "bigquery_to_bigtable", title: "BigQuery → Bigtable", description: "Load a serving layer in Bigtable from BigQuery.", mode: "custom", kind: "batch" },
   { id: "batch_inference", title: "Batch ML inference", description: "GCS or BigQuery → RunInference (Vertex AI or local model) → BigQuery.", mode: "custom", kind: "batch" },
