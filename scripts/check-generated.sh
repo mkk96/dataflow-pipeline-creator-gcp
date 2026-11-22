@@ -25,8 +25,15 @@ run() {
     if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
       # Surface the failure as an annotation (readable without log access).
       local summary
-      summary="$(grep -E 'Error|error|FAILED|assert|✗|Traceback' "${log}" | tail -n 8 | tr '\n' ' ' | cut -c1-900)"
-      echo "::error title=${project##*/}: ${label}::${summary:-see job log}"
+      summary="$(grep -E 'Error|error|FAILED|assert|SC[0-9]{4}|DL[0-9]{4}|Traceback' "${log}" | tail -n 8 | tr '\n' ' ' | cut -c1-900)"
+      [[ -n "${summary}" ]] || summary="$(tail -n 8 "${log}" | tr '\n' ' ' | cut -c1-900)"
+      # Workflow-command escaping: % first, then : and , in properties.
+      local title="${project##*/} - ${label}"
+      title="${title//%/%25}"
+      title="${title//:/%3A}"
+      title="${title//,/%2C}"
+      summary="${summary//%/%25}"
+      echo "::error title=${title}::${summary}"
     fi
   fi
   rm -f "${log}"
