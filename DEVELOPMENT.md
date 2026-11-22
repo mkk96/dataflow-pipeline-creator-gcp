@@ -13,10 +13,10 @@ npm test               # unit tests (vitest)
 npm run generate       # write every scenario sample to generated/
 ```
 
-To check the generated projects as CI does, use Python 3.11 with the generated requirements installed, plus `jsonschema`, `shellcheck` and `yamllint` (and optionally `hadolint`):
+To check the generated projects as CI does, use Python 3.11 with the generated requirements installed, plus `jsonschema`, `shellcheck`, `yamllint` and `sqlfluff` (and optionally `hadolint`):
 
 ```bash
-pip install -r generated/<any project>/requirements-dev.txt jsonschema yamllint shellcheck-py
+pip install -r generated/<any project>/requirements-dev.txt jsonschema yamllint sqlfluff shellcheck-py
 bash scripts/check-generated.sh
 ```
 

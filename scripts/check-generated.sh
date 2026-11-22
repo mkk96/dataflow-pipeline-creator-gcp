@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Run every correctness check on the generated sample projects (same as CI).
 # Requires: Python 3.11 with the generated requirements-dev.txt installed, plus
-# jsonschema, shellcheck, yamllint (and optionally hadolint, sqlfluff) on PATH.
+# jsonschema, shellcheck, yamllint, sqlfluff (and optionally hadolint) on PATH;
+# CI installs the same pinned tools in .github/workflows/test.yml.
 #
 #   npm run generate && bash scripts/check-generated.sh [generated]
 set -euo pipefail
