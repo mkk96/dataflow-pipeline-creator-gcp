@@ -381,7 +381,7 @@ function envFile(spec: ProjectSpec, d: Derived, e: EnvCode): string {
   return lines.join("\n");
 }
 
-const SCRIPT_PRELUDE = [
+export const SCRIPT_PRELUDE = [
   "set -euo pipefail",
   "",
   'ENV_NAME="${1:-dev}"',

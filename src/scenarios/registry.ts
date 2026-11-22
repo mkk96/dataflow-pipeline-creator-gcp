@@ -5,9 +5,10 @@
  *   3. remove its entry from PLANNED_SCENARIOS
  */
 import { gcsToBigquery } from "./gcsToBigquery";
+import { googleTemplateLauncher } from "./googleTemplateLauncher";
 import type { PlannedScenario, Scenario } from "./types";
 
-export const SCENARIOS: Scenario[] = [gcsToBigquery];
+export const SCENARIOS: Scenario[] = [gcsToBigquery, googleTemplateLauncher];
 
 /** Roadmap from docs/requirements.md (shown as "Soon" in the gallery). */
 export const PLANNED_SCENARIOS: PlannedScenario[] = [
@@ -24,7 +25,6 @@ export const PLANNED_SCENARIOS: PlannedScenario[] = [
   { id: "pubsub_enrichment", title: "Pub/Sub → BigQuery lookup enrichment", description: "Periodically refreshed side input → BigQuery.", mode: "custom", kind: "streaming" },
   { id: "kafka_to_bigquery", title: "Kafka → BigQuery", description: "Kafka source with credentials from Secret Manager.", mode: "custom", kind: "streaming" },
   { id: "pubsub_router", title: "Pub/Sub → route to multiple outputs", description: "Route by attribute or field to Pub/Sub topics or BigQuery tables.", mode: "custom", kind: "streaming" },
-  { id: "google_template_launcher", title: "Google-provided template launcher", description: "Pub/Sub → BigQuery, Text → BigQuery, JDBC → BigQuery, BigQuery → Parquet and more.", mode: "template", kind: "batch" },
 ];
 
 export function getScenario(id: string): Scenario | undefined {
