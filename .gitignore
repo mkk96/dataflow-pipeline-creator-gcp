@@ -1,0 +1,16 @@
+node_modules/
+dist/
+generated/
+generated-*/
+coverage/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.log
+.DS_Store
+.env
+.env.*
+!config/*.env
+.claude/settings.local.json
