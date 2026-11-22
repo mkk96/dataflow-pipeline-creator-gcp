@@ -20,14 +20,35 @@ Generate a ready-to-run **Apache Beam (Python) project for Google Cloud Dataflow
 
 ### Available scenarios
 
-| Scenario | Kind | What it builds |
-|---|---|---|
-| GCS files → BigQuery | batch | CSV, JSON, Avro or Parquet files from GCS are loaded into BigQuery. You map columns (rename, cast, require, drop), add filters, dedup and audit columns, and bad records go to a dead-letter BigQuery table and/or GCS. |
+**Custom pipelines: batch**
 
-Planned, and shown as **Soon** in the gallery:
-- **Batch:** BigQuery → transform → BigQuery, BigQuery → GCS, JDBC → BigQuery, GCS validate and dedup, Cloud DLP de-identification, BigQuery → Bigtable, batch ML inference.
-- **Streaming:** Pub/Sub → BigQuery, Pub/Sub → GCS, windowed aggregations, side-input enrichment, Kafka → BigQuery, Pub/Sub router.
-- **Template:** a launcher for Google-provided templates.
+| Scenario | What it builds |
+|---|---|
+| GCS files → BigQuery | Loads CSV, JSON, Avro or Parquet files into BigQuery, with column mapping (rename, cast, require, drop), filters, dedup, audit columns and dead letters. |
+| BigQuery → transform → BigQuery | Reads a table or a SQL query (saved as `sql/<name>.sql`) and maps the rows. Each run writes only its own day partition. |
+| BigQuery → GCS export | Exports a table or query to Parquet, Avro, JSON lines or CSV in a run-date folder; re-running a date replaces its files. |
+| JDBC (Cloud SQL) → BigQuery | Reads Postgres or MySQL in parallel through the Cloud SQL Python Connector, with the password from Secret Manager or IAM database auth. |
+| GCS → validate + dedup → BigQuery | Checks each record's types, required fields, regex, allowed values, ranges and lengths, and can reject unknown fields. Dedups the rest; good rows go to BigQuery and bad rows to an error table or GCS. |
+| GCS → Cloud DLP → BigQuery | De-identifies chosen columns before loading: mask, redact, replace, hash, token, or inspect and mask free text. Dead letters never contain PII in clear. |
+| BigQuery → Bigtable | Loads a serving layer, with a row-key template (reversal, reverse timestamp, salting), family and qualifier mapping, and idempotent cell timestamps. |
+| Batch ML inference | Runs GCS or BigQuery rows through RunInference with a scikit-learn model or a Vertex AI endpoint, and writes predictions with the model version to BigQuery. |
+
+**Custom pipelines: streaming**
+
+| Scenario | What it builds |
+|---|---|
+| Pub/Sub → BigQuery | Maps JSON messages and writes them with the Storage Write API (exactly-once or at-least-once); rejected rows go to a dead-letter table. |
+| Pub/Sub → GCS | Writes windowed Avro, Parquet or JSON-lines files, one set per event-time window, with allowed lateness. |
+| Pub/Sub → windowed aggregations | Computes count, sum, min, max and avg per key over fixed, sliding or session windows, with early and late firings, and streams the results to BigQuery. |
+| Pub/Sub → BigQuery lookup enrichment | Joins each message to a BigQuery lookup table, loaded as a side input that refreshes periodically. Unmatched messages are kept or dead-lettered. |
+| Kafka → BigQuery | Reads Kafka topics (credentials from Secret Manager), decodes the JSON, applies event-time windows and writes with the Storage Write API. |
+| Pub/Sub → route to multiple outputs | Routes each message by an attribute or JSON field to Pub/Sub topics and/or BigQuery tables, with a default route and dead letters. |
+
+**Google template**
+
+| Scenario | What it builds |
+|---|---|
+| Google-provided template launcher | Launches Google's Pub/Sub → BigQuery, GCS Text → BigQuery, JDBC → BigQuery, BigQuery → Parquet, Pub/Sub → GCS Text or GCS Text → Pub/Sub template, pinned to release `2026-11-10-00_RC01`. It generates a gcloud launch script, per-env config and a Composer DAG. |
 
 ### What you get
 
@@ -67,6 +88,14 @@ Unzip it and follow its own `README.md`, which lists the exact commands and the 
    ```
 4. Or schedule it: the optional `airflow/<dag_id>.py` launches the template from Cloud Composer every day, passing `{{ ds }}` as the run date.
 
+### Good to know
+
+- **Streaming jobs keep a stable job name**, so they can be updated in place; batch runs get a date/time suffix.
+- **Java in the image:** in Beam 2.77.0 the BigQuery Storage Write API and KafkaIO are Java cross-language transforms. Projects that use them install a JRE in the Flex Template image, and the launcher downloads the expansion jar from Maven Central at launch. Workers on private IPs therefore need Cloud NAT, or a mirrored jar. Each project's README says when this applies.
+- **Table settings with the Storage Write API:** it creates missing tables without partitioning or CMEK. Streaming projects include `scripts/create_bq_tables.sh` to create the tables first, with partitioning, clustering and CMEK.
+- **Local runs:** every project's `scripts/run_local.sh` runs on sample data with local stand-ins (SQLite, a DLP emulator, a tiny model, bounded message files), so you can try it before deploying.
+- **Template launcher:** in the scenario picker choose **Google template**. The parameter names, regexes and defaults come from Google's published template metadata for the pinned release.
+
 ### Parameters at a glance
 
 Every form field has an **ⓘ** tooltip with the details. The main groups:
@@ -75,10 +104,5 @@ Every form field has an **ⓘ** tooltip with the details. The main groups:
 - **Environment, naming & labels:** the env the values belong to (dev/stg/prd), org, domain, and the team, owner and cost-center labels applied to every Dataflow job.
 - **GCP project, storage & templates:** project, region, the temp/staging bucket, the templates bucket, and the Artifact Registry repository.
 - **Workers, network & security:** worker service account, network and subnetwork, public IPs (off by default), machine type, max workers, autoscaling, Dataflow Prime, and an optional CMEK key.
-- **Scenario sections:** for GCS → BigQuery:
-  - source files and format
-  - column mapping (source → BigQuery column, type, required, drop)
-  - filters, dedup and audit columns
-  - destination table, partitioning and write disposition
-  - where bad records go
+- **Scenario sections:** each scenario adds its own sections. Examples: source files and format, column mapping, filters and dedup, validation rules, de-identification methods, row-key design, model settings, windowing and triggers, routing table, or the template's parameters. They end with the destination and where bad records go.
 - **Airflow launcher:** generate the Composer DAG and choose its schedule.

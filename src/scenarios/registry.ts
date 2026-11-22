@@ -13,7 +13,10 @@ import { gcsToBigquery } from "./gcsToBigquery";
 import { gcsValidateDedup } from "./gcsValidateDedup";
 import { googleTemplateLauncher } from "./googleTemplateLauncher";
 import { jdbcToBigquery } from "./jdbcToBigquery";
+import { kafkaToBigquery } from "./kafkaToBigquery";
 import { pubsubAggregations } from "./pubsubAggregations";
+import { pubsubEnrichment } from "./pubsubEnrichment";
+import { pubsubRouter } from "./pubsubRouter";
 import { pubsubToBigquery } from "./pubsubToBigquery";
 import { pubsubToGcs } from "./pubsubToGcs";
 import type { PlannedScenario, Scenario } from "./types";
@@ -30,14 +33,14 @@ export const SCENARIOS: Scenario[] = [
   pubsubToBigquery,
   pubsubToGcs,
   pubsubAggregations,
+  pubsubEnrichment,
+  kafkaToBigquery,
+  pubsubRouter,
   googleTemplateLauncher,
 ];
 
 /** Roadmap from docs/requirements.md (shown as "Soon" in the gallery). */
 export const PLANNED_SCENARIOS: PlannedScenario[] = [
-  { id: "pubsub_enrichment", title: "Pub/Sub → BigQuery lookup enrichment", description: "Periodically refreshed side input → BigQuery.", mode: "custom", kind: "streaming" },
-  { id: "kafka_to_bigquery", title: "Kafka → BigQuery", description: "Kafka source with credentials from Secret Manager.", mode: "custom", kind: "streaming" },
-  { id: "pubsub_router", title: "Pub/Sub → route to multiple outputs", description: "Route by attribute or field to Pub/Sub topics or BigQuery tables.", mode: "custom", kind: "streaming" },
 ];
 
 export function getScenario(id: string): Scenario | undefined {
