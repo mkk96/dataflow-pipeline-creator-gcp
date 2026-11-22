@@ -4,27 +4,31 @@
  *   2. import it here and add it to SCENARIOS
  *   3. remove its entry from PLANNED_SCENARIOS
  */
+import { batchInference } from "./batchInference";
+import { bigqueryToBigtable } from "./bigqueryToBigtable";
 import { bigqueryToGcs } from "./bigqueryToGcs";
 import { bigqueryTransform } from "./bigqueryTransform";
+import { gcsDlpBigquery } from "./gcsDlpBigquery";
 import { gcsToBigquery } from "./gcsToBigquery";
 import { gcsValidateDedup } from "./gcsValidateDedup";
 import { googleTemplateLauncher } from "./googleTemplateLauncher";
+import { jdbcToBigquery } from "./jdbcToBigquery";
 import type { PlannedScenario, Scenario } from "./types";
 
 export const SCENARIOS: Scenario[] = [
   gcsToBigquery,
   bigqueryTransform,
   bigqueryToGcs,
+  jdbcToBigquery,
   gcsValidateDedup,
+  gcsDlpBigquery,
+  bigqueryToBigtable,
+  batchInference,
   googleTemplateLauncher,
 ];
 
 /** Roadmap from docs/requirements.md (shown as "Soon" in the gallery). */
 export const PLANNED_SCENARIOS: PlannedScenario[] = [
-  { id: "jdbc_to_bigquery", title: "JDBC (Cloud SQL) → BigQuery", description: "Postgres / MySQL with partitioned reads; passwords from Secret Manager.", mode: "custom", kind: "batch" },
-  { id: "gcs_dlp_bigquery", title: "GCS → Cloud DLP → BigQuery", description: "Mask or tokenize PII with Cloud DLP before loading.", mode: "custom", kind: "batch" },
-  { id: "bigquery_to_bigtable", title: "BigQuery → Bigtable", description: "Load a serving layer in Bigtable from BigQuery.", mode: "custom", kind: "batch" },
-  { id: "batch_inference", title: "Batch ML inference", description: "GCS or BigQuery → RunInference (Vertex AI or local model) → BigQuery.", mode: "custom", kind: "batch" },
   { id: "pubsub_to_bigquery", title: "Pub/Sub → BigQuery", description: "Storage Write API with a dead-letter table.", mode: "custom", kind: "streaming" },
   { id: "pubsub_to_gcs", title: "Pub/Sub → GCS", description: "Windowed Avro, Parquet or text files.", mode: "custom", kind: "streaming" },
   { id: "pubsub_aggregations", title: "Pub/Sub → windowed aggregations", description: "Fixed / sliding / session windows, triggers, allowed lateness → BigQuery.", mode: "custom", kind: "streaming" },
